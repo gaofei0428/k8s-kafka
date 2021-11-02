@@ -1,0 +1,25 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-issuer
+    field.cattle.io/creatorId: u-lmaxmfrwmk
+    field.cattle.io/ingressState: '{"a2FmZHJvcC9lbGFzdGljLXN5c3RlbS9rYWZkcm9wLXN6aWRjLm1tdHdvcmsuY29tLy85MDAw":"deployment:elastic-system:kafdrop"}'
+    field.cattle.io/publicEndpoints: '[{"addresses":["10.10.0.54"],"port":443,"protocol":"HTTPS","serviceName":"elastic-system:ingress-a0f74272557928732a9abd5b2733f84f","ingressName":"elastic-system:kafdrop","hostname":"kafdrop-szidc.mmtwork.com","allNodes":true}]'
+  labels:
+    cattle.io/creator: norman
+  name: kafdrop
+  namespace: elastic-system
+spec:
+  rules:
+  - host: kafdrop-szidc.mmtwork.com
+    http:
+      paths:
+      - backend:
+          serviceName: ingress-a0f74272557928732a9abd5b2733f84f
+          servicePort: 9000
+        pathType: ImplementationSpecific
+  tls:
+  - hosts:
+    - kafdrop-szidc.mmtwork.com
+    secretName: kafdrop-szidc-mmtwork-com

@@ -1,0 +1,181 @@
+apiVersion: v1
+data:
+  dxps.conf: |-
+    input {
+      kafka{
+        bootstrap_servers => ["10.43.145.37:9092"]
+        client_id => "dxps"
+        group_id => "logstash-dxps"
+        auto_offset_reset => "latest"
+        consumer_threads => 3
+       decorate_events => "true"
+       topics => ["filebeat-es"]
+       type => "kafka-to-elas"
+       codec => "json"
+      }
+    }
+
+    filter {
+
+       mutate {
+         remove_field => [ "agent", "ecs", "kubernetes.node.labels", "kafka.key", "kafka.headers","kubernetes.namespace_labels" ]
+        }
+        
+    }
+    output {
+      if [kubernetes][namespace] in [ "dxp", "dxp-job", "dxp-test", "dxp-test-job", "dip-dev" ] {
+        elasticsearch {
+          hosts => ["https://elasticsearch-es-http.elastic-system.svc:9200"]
+          ssl => true
+          ssl_certificate_verification => false
+          user => "elastic"
+          password => "te2910Wghga3GBlvT29X32U4"
+          cacert => "/usr/share/logstash/cd/ca.crt"
+          #index => "logstash-dxp-%{+YYYY.MM.dd}"
+          ilm_rollover_alias => "logstash-dxp"
+          ilm_pattern => "000001"
+          ilm_policy => "filebeat"
+        }
+      }
+      
+    }
+  logstash.conf: |-
+    input {
+      kafka{
+        bootstrap_servers => ["10.43.145.37:9092"]
+        client_id => "logstash"
+        group_id => "logstash"
+        auto_offset_reset => "latest"
+        consumer_threads => 3
+       decorate_events => "true"
+       topics => ["filebeat-es"]
+       type => "kafka-to-elas"
+       codec => "json"
+      }
+    }
+
+    filter {
+
+        json {
+            source => "message"
+            skip_on_invalid_json => true
+            remove_field => [ "agent", "ecs", "kubernetes.node.labels", "kafka.key", "kafka.headers","kubernetes.namespace_labels" ]
+        }
+        
+    }
+    output {
+      if [kubernetes][namespace] in [ "mes-server", "mil", "msi" ] {
+        elasticsearch {
+          hosts => ["https://elasticsearch-es-http.elastic-system.svc:9200"]
+          ssl => true
+          ssl_certificate_verification => false
+          user => "elastic"
+          password => "te2910Wghga3GBlvT29X32U4"
+          cacert => "/usr/share/logstash/cd/ca.crt"
+          #index => "logstash-mil-%{+YYYY.MM.dd}"
+          ilm_rollover_alias => "logstash-mil"
+          ilm_pattern => "000001"
+          ilm_policy => "filebeat"
+        }
+      }
+      if [kubernetes][namespace] in [ "vil" ] {
+        elasticsearch {
+          hosts => ["https://elasticsearch-es-http.elastic-system.svc:9200"]
+          ssl => true
+          ssl_certificate_verification => false
+          user => "elastic"
+          password => "te2910Wghga3GBlvT29X32U4"
+          cacert => "/usr/share/logstash/cd/ca.crt"
+          #index => "logstash-vil-%{+YYYY.MM.dd}"
+          ilm_rollover_alias => "logstash-vil"
+          ilm_pattern => "000001"
+          ilm_policy => "filebeat"
+        }
+      }
+      if [kubernetes][namespace] == "ingress-nginx" {
+        elasticsearch {
+          hosts => ["https://elasticsearch-es-http.elastic-system.svc:9200"]
+          ssl => true
+          ssl_certificate_verification => false
+          user => "elastic"
+          password => "te2910Wghga3GBlvT29X32U4"
+          cacert => "/usr/share/logstash/cd/ca.crt"
+          #index => "logstash-ingress-%{+YYYY.MM.dd}"
+          ilm_rollover_alias => "logstash-ingress"
+          ilm_pattern => "000001"
+          ilm_policy => "filebeat"
+        }
+      }
+    }
+  logstash.yml: >-
+    http.host: "0.0.0.0"
+
+    xpack.monitoring.enabled: true
+
+    xpack.monitoring.elasticsearch.hosts: [
+    "https://elasticsearch-es-http.elastic-system.svc:9200" ]
+
+    xpack.monitoring.elasticsearch.username: "elastic"
+
+    xpack.monitoring.elasticsearch.password: "te2910Wghga3GBlvT29X32U4"
+
+    xpack.monitoring.elasticsearch.ssl.verification_mode: none
+
+    xpack.monitoring.elasticsearch.ssl.certificate_authority:
+    "/usr/share/logstash/cd/ca.crt"
+
+    xpack.monitoring.elasticsearch.sniffing: false
+
+    #pipeline.workers: 8
+
+    #pipeline.output.workers: 8
+  msd-sil.conf: |-
+    input {
+      kafka{
+        bootstrap_servers => ["10.43.145.37:9092"]
+        client_id => "msd-sil"
+        group_id => "logstash-msd"
+        auto_offset_reset => "latest"
+        consumer_threads => 3
+       decorate_events => "true"
+       topics => ["filebeat-es"]
+       type => "kafka-to-elas"
+       codec => "json"
+      }
+    }
+
+    filter {
+
+       mutate {
+         remove_field => [ "agent", "ecs", "kubernetes.node.labels", "kafka.key", "kafka.headers","kubernetes.namespace_labels" ]
+        }
+        
+    }
+    output {
+      if [kubernetes][namespace] in [ "msd-sim", "sil", "sil-pre" ] {
+        elasticsearch {
+          hosts => ["https://elasticsearch-es-http.elastic-system.svc:9200"]
+          ssl => true
+          ssl_certificate_verification => false
+          user => "elastic"
+          password => "te2910Wghga3GBlvT29X32U4"
+          cacert => "/usr/share/logstash/cd/ca.crt"
+          index => "logstash-msd-sil-%{+YYYY.MM.dd}"
+          ilm_rollover_alias => "logstash-msd-sil"
+          ilm_pattern => "000001"
+          ilm_policy => "filebeat"
+        }
+      }
+      
+    }
+  pipelines.yml: |-
+    - pipeline.id: logstash
+      path.config: "/usr/share/logstash/mycfg/logstash.conf"
+    - pipeline.id: dxps
+      path.config: "/usr/share/logstash/mycfg/dxps.conf"
+    - pipeline.id: msd-sil
+      path.config: "/usr/share/logstash/mycfg/msd-sil.conf"
+kind: ConfigMap
+metadata:
+  name: logstash-config
+  namespace: elastic-system
