@@ -1,0 +1,52 @@
+apiVersion: v1
+data:
+  filebeat.yml: |-
+    filebeat.inputs:
+    - type: container
+      paths:
+        - /var/log/containers/*.log
+      ignore_older: 24h
+      clean_inactive: 36h
+      processors:
+      - add_kubernetes_metadata:
+          in_cluster: true
+          matchers:
+          - logs_path:
+              logs_path: "/var/log/containers/"
+      - decode_json_fields:
+          fields: ["message"]
+          target: "message_decode"
+          overwrite_keys: false
+      - drop_event:
+            when:
+                or:
+                 - contains:
+                    log.file.path: "cattle-logging"
+                 - contains:
+                    log.file.path: "cattle-prometheus" 
+                 - contains:
+                    log.file.path: "cattle-system"
+                 - contains:
+                    log.file.path: "elastic-system"
+    processors:
+      - drop_fields:
+          fields: ["agent", "host", "ecs"]
+    output.kafka:
+      hosts: ["kafka-0.kafka-headless.elastic-system.svc.cluster.local:9092"]
+      topic: "filebeat-es"
+      partition.round_robin:
+        reachable_only: false
+      required_acks: 1
+      compression: gzip
+    logging.json: true
+    logging.metrics.enabled: false
+kind: ConfigMap
+metadata:
+  labels:
+    app: filebeat-filebeat
+    app.kubernetes.io/managed-by: Helm
+    chart: filebeat-7.10.0
+    heritage: Helm
+    release: filebeat
+  name: filebeat-config
+  namespace: elastic-system
