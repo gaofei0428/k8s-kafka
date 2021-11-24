@@ -91,7 +91,7 @@ kafka-port:
 ### kafka-manager
 
 ```
-部署kafka-manager创建ingress basic auth
+部署kafka-manager创建ingress basic auth，修改ingress的domain、修改zookeeper的地址
 htpasswd -c auth kfdrop
 kubectl create secret generic basic-auth --from-file=auth --namespace elastic-system
 ```
