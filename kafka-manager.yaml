@@ -1,0 +1,84 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-manager
+  labels:
+    app: kafka-manager
+  namespace: elastic-system
+spec:
+  ports:
+  - name: kafka
+    port: 9000
+    targetPort: 9000
+  selector:
+    app: kafka-manager
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-manager
+  labels:
+    app: kafka-manager
+  namespace: elastic-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-manager
+  template:
+    metadata:
+      labels:
+        app: kafka-manager
+    spec:
+      containers:
+      - name: kafka-manager
+        image: hlebalbau/kafka-manager
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: kafka-manager
+          containerPort: 9000
+          protocol: TCP
+        env:
+        - name: ZK_HOSTS
+          value: "10.43.81.188:2181"
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: kafka-manager
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: kafka-manager
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 250m
+            memory: 256Mi
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/auth-realm: Authentication Required - kfdrop
+    nginx.ingress.kubernetes.io/auth-secret: basic-auth
+    nginx.ingress.kubernetes.io/auth-type: basic
+  generation: 4
+  labels:
+    cattle.io/creator: norman
+  name: kafdrop
+  namespace: elastic-system
+spec:
+  rules:
+  - host: kafdrop.work.com
+    http:
+      paths:
+      - backend:
+          serviceName: kafka-manager
+          servicePort: 9000
+        pathType: ImplementationSpecific
+  tls:
+  - hosts:
+    - kafdrop.work.com
+    secretName: kafdrop-szidc-mmtwork-com
