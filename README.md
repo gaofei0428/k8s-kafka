@@ -88,6 +88,13 @@ kafka-port:
 9092
 ```
 
+### kafka-manager
+
+```
+部署kafka-manager创建ingress basic auth
+htpasswd -c auth kfdrop
+kubectl create secret generic basic-auth --from-file=auth --namespace elastic-system
+```
 ### Statefulset
 
 ```
